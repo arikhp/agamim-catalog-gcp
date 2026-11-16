@@ -41,8 +41,7 @@ jobs:
         timeout-minutes: 6
         env:
           BASE_URL: http://127.0.0.1:4180
-          DEBUG: pw:api
-        run: npm run test:consumer -- --reporter=list --workers=2
+        run: npm run test:consumer
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
