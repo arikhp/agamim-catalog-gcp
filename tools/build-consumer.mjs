@@ -44,12 +44,22 @@ for (const page of ["index.html", "404.html"]) {
   writeFileSync(file, html);
 }
 
+// Public mode: no sign-in in this phase. Copy the script and load it first, before the app starts.
+cpSync(join(ROOT, "tools/public-mode.js"), join(DIST, "public-mode.js"));
+{
+  const file = join(DIST, "index.html");
+  const html = readFileSync(file, "utf8");
+  if (!/<head[^>]*>/i.test(html)) { console.error("index.html has no <head>"); process.exit(1); }
+  writeFileSync(file, html.replace(/<head[^>]*>/i, (m) => `${m}\n    <script src="./public-mode.js"></script>`));
+}
+
 // Verify.
 const files = walk(DIST).map((f) => relative(DIST, f));
 const bad = files.filter((f) => FORBIDDEN.some((re) => re.test(f)));
 const leftover = ["index.html", "404.html"].flatMap((p) =>
   STRIP_SCRIPTS.filter((s) => readFileSync(join(DIST, p), "utf8").includes(s)).map((s) => `${p} still references ${s}`));
 if (!files.includes("index.html")) bad.push("index.html missing");
+if (!readFileSync(join(DIST, "index.html"), "utf8").includes("./public-mode.js")) bad.push("index.html does not load public-mode.js");
 if (bad.length || leftover.length) {
   console.error("Consumer build FAILED:\n" + [...bad, ...leftover].map((b) => "  " + b).join("\n"));
   process.exit(1);

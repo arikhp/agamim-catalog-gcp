@@ -62,6 +62,9 @@ jobs:
           done
           [ "$code" = "200" ] || { echo "site did not return 200"; exit 1; }
           grep -qi "<html" /tmp/index.html
+          # No sign-in in this phase: the page must load the public-mode script that skips the login screen.
+          grep -q "public-mode.js" /tmp/index.html || { echo "index.html does not load public-mode.js"; exit 1; }
+          code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/public-mode.js"); [ "$code" = "200" ] || { echo "public-mode.js missing"; exit 1; }
           code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/data/consumer/layers.json"); [ "$code" = "200" ]
           for p in add-dataset.html admin-actions.js login.js; do
             code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/$p"); [ "$code" = "404" ] || { echo "$p must not be public (got $code)"; exit 1; }

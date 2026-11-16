@@ -12,7 +12,7 @@
     "test:server": "node --no-warnings --test \"server/test/*.test.js\"",
     "build:consumer": "node tools/build-consumer.mjs",
     "serve:dist": "http-server dist -p 4180 -a 127.0.0.1 -c-1",
-    "test:consumer": "playwright test \"^.*/tests/(home|data|a11y|sort|search-suggest|no-version|qa)\\\\.spec\\\\.js$\" --grep-invert 'add-dataset|add dataset|add-dataset form|registered dataset|alert is above the bar'"
+    "test:consumer": "playwright test \"^.*/tests/(home|data|a11y|sort|search-suggest|no-version|qa|public-mode)\\\\.spec\\\\.js$\" --grep-invert 'add-dataset|add dataset|add-dataset form|registered dataset|alert is above the bar|accessibility: login|login screen shows|navigation bar has the same parts on every page'"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
