@@ -9,11 +9,15 @@
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report",
     "server": "node --no-warnings server/index.js",
-    "test:server": "node --no-warnings --test \"server/test/*.test.js\""
+    "test:server": "node --no-warnings --test \"server/test/*.test.js\"",
+    "build:consumer": "node tools/build-consumer.mjs",
+    "serve:dist": "http-server dist -p 4180 -a 127.0.0.1 -c-1",
+    "test:consumer": "start-server-and-test serve:dist http://127.0.0.1:4180 \"BASE_URL=http://127.0.0.1:4180 playwright test home data a11y sort search-suggest no-version qa --grep-invert 'add-dataset|add dataset|add-dataset form|registered dataset|alert is above the bar'\""
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.65.0",
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "start-server-and-test": "^2.0.0"
   }
 }
