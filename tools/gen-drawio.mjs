@@ -14,7 +14,7 @@ const ICON = {
   sec: ["securityidentity", "#ea4335"], scc: ["securitycommandcenter", "#ea4335"], obs: ["observability", "#34a853"],
   ops: ["operations", "#34a853"], dev: ["devops", "#fbbc04"], data: ["dataanalytics", "#4285f4"],
   serverless: ["serverlesscomputing", "#4285f4"], mgmt: ["managementtools", "#34a853"], integ: ["integrationservices", "#4285f4"],
-  compute: ["compute", "#4285f4"], tools: ["developer_tools", "#fbbc04"]
+  compute: ["compute", "#4285f4"], tools: ["developer_tools", "#fbbc04"], ai: ["aimachinelearning", "#a142f4"]
 };
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 // Wrap a label to about `max` characters per line and use <br> (cells are html=1).
@@ -90,6 +90,7 @@ D.push(diagram("01-overview", "Solution overview (one environment, Israel me-wes
     { id: "bq", label: "BigQuery: source + usage", icon: "bq", x: 1130, y: 110, in: "data" },
     { id: "dpx", label: "Dataplex Universal Catalog", icon: "data", x: 1270, y: 110, in: "data" },
     { id: "ps", label: "Pub/Sub usage events", icon: "integ", x: 1130, y: 240, in: "data" },
+    { id: "vx", label: "Vertex AI: Gemini + embeddings", icon: "ai", x: 990, y: 240, in: "data" },
     { id: "idp", label: "Identity Platform (login, MFA)", icon: "sec", x: 160, y: 440, in: "ident" },
     { id: "sm", label: "Secret Manager", icon: "sec", x: 300, y: 440, in: "ident" },
     { id: "kms", label: "Cloud KMS (CMEK)", icon: "sec", x: 440, y: 440, in: "ident" },
@@ -107,7 +108,7 @@ D.push(diagram("01-overview", "Solution overview (one environment, Israel me-wes
     { from: "alb", to: "site", label: "/*" }, { from: "alb", to: "api", label: "/api/**" }, { from: "alb", to: "iap" },
     { from: "iap", to: "admin" },
     { from: "api", to: "alloy" }, { from: "admin", to: "api", label: "admin calls" }, { from: "api", to: "ps", label: "events" },
-    { from: "ps", to: "bq", label: "BQ subscription" }, { from: "sch", to: "job" },
+    { from: "ps", to: "bq", label: "BQ subscription" }, { from: "alloy", to: "vx", label: "embeddings, NL queries", dashed: true }, { from: "sch", to: "job" },
     { from: "job", to: "bq", label: "read metadata" }, { from: "job", to: "alloy", label: "write catalog" }
   ]
 }));
@@ -201,6 +202,7 @@ D.push(diagram("04-data-flow", "Data flow: catalog, usage and lineage", 1280, 76
     { id: "job", label: "Cloud Run job: harvest", icon: "run", x: 330, y: 270, in: "ing" },
     { id: "alloy", label: "AlloyDB: catalog tables", icon: "alloy", x: 620, y: 110, in: "store" },
     { id: "dpx", label: "Dataplex: lineage, quality, glossary", icon: "data", x: 760, y: 110, in: "store" },
+    { id: "vx", label: "Vertex AI: embeddings,\ndraft descriptions", icon: "ai", x: 760, y: 200, in: "store" },
     { id: "mat", label: "materialize.js: build\nconsumer JSON files", w: 150, x: 620, y: 340, in: "store" },
     { id: "site", label: "Cloud Storage: site bucket\ndata/consumer/*.json", icon: "storage", x: 960, y: 110, in: "pub" },
     { id: "cdn", label: "Cloud CDN\nHTTPS to users", icon: "net", x: 1100, y: 110, in: "pub" },
@@ -213,7 +215,7 @@ D.push(diagram("04-data-flow", "Data flow: catalog, usage and lineage", 1280, 76
   ],
   edges: [
     { from: "sch", to: "job" }, { from: "job", to: "bqs", label: "read" }, { from: "job", to: "alloy", label: "upsert" },
-    { from: "job", to: "dpx", dashed: true, label: "lineage" }, { from: "alloy", to: "mat" }, { from: "mat", to: "site", label: "sync" },
+    { from: "job", to: "dpx", dashed: true, label: "lineage" }, { from: "job", to: "vx", dashed: true, label: "descriptions" }, { from: "alloy", to: "vx", dashed: true, label: "vector search" }, { from: "alloy", to: "mat" }, { from: "mat", to: "site", label: "sync" },
     { from: "site", to: "cdn" }, { from: "api", to: "alloy" }, { from: "evt", to: "ps" }, { from: "ps", to: "usage" },
     { from: "log", to: "usage", dashed: true }, { from: "usage", to: "dash" }
   ]
