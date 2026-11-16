@@ -74,6 +74,7 @@ D.push(diagram("01-overview", "Solution overview (one environment, Israel me-wes
     { id: "data", label: "Data (me-west1)", x: 960, y: 70, w: 440, h: 290 },
     { id: "ident", label: "Identity and secrets", x: 130, y: 400, w: 440, h: 150 },
     { id: "jobs", label: "Batch (me-west1)", x: 600, y: 400, w: 330, h: 150 },
+    { id: "ing", label: "Dim-table ingestion (every 10 minutes)", x: 960, y: 400, w: 440, h: 150, fill: "#fff8e1", stroke: "#fbbc04" },
     { id: "ops", label: "Operations and security", x: 130, y: 580, w: 1270, h: 170, fill: "#f1f8f4" }
   ],
   nodes: [
@@ -89,13 +90,16 @@ D.push(diagram("01-overview", "Solution overview (one environment, Israel me-wes
     { id: "alloy", label: "AlloyDB (private IP, HA)", icon: "alloy", x: 990, y: 110, in: "data" },
     { id: "bq", label: "BigQuery: source + usage", icon: "bq", x: 1130, y: 110, in: "data" },
     { id: "dpx", label: "Dataplex Universal Catalog", icon: "data", x: 1270, y: 110, in: "data" },
-    { id: "ps", label: "Pub/Sub usage events", icon: "integ", x: 1130, y: 240, in: "data" },
+    { id: "ps", label: "Pub/Sub usage events", icon: "integ", x: 1270, y: 240, in: "data" },
     { id: "vx", label: "Vertex AI: Gemini + embeddings", icon: "ai", x: 990, y: 240, in: "data" },
     { id: "idp", label: "Identity Platform (login, MFA)", icon: "sec", x: 160, y: 440, in: "ident" },
     { id: "sm", label: "Secret Manager", icon: "sec", x: 300, y: 440, in: "ident" },
     { id: "kms", label: "Cloud KMS (CMEK)", icon: "sec", x: 440, y: 440, in: "ident" },
     { id: "sch", label: "Cloud Scheduler", icon: "mgmt", x: 640, y: 440, in: "jobs" },
     { id: "job", label: "Cloud Run job: harvest", icon: "run", x: 790, y: 440, in: "jobs" },
+    { id: "isch", label: "Cloud Scheduler: every 10 min", icon: "mgmt", x: 980, y: 440, in: "ing" },
+    { id: "ifetch", label: "Cloud Run job: API fetcher", icon: "run", x: 1130, y: 440, in: "ing" },
+    { id: "ext", label: "External REST APIs\n(dimension data)", w: 90, h: 50, x: 1290, y: 445, in: "ing", fill: "#fce8e6", stroke: "#ea4335" },
     { id: "mon", label: "Monitoring, uptime, SLOs", icon: "obs", x: 160, y: 620, in: "ops" },
     { id: "log", label: "Logging + sink to BigQuery", icon: "obs", x: 330, y: 620, in: "ops" },
     { id: "scc", label: "Security Command Center", icon: "scc", x: 500, y: 620, in: "ops" },
@@ -109,7 +113,7 @@ D.push(diagram("01-overview", "Solution overview (one environment, Israel me-wes
     { from: "iap", to: "admin" },
     { from: "api", to: "alloy" }, { from: "admin", to: "api", label: "admin calls" }, { from: "api", to: "ps", label: "events" },
     { from: "ps", to: "bq", label: "BQ subscription" }, { from: "alloy", to: "vx", label: "embeddings, NL queries", dashed: true }, { from: "sch", to: "job" },
-    { from: "job", to: "bq", label: "read metadata" }, { from: "job", to: "alloy", label: "write catalog" }
+    { from: "isch", to: "ifetch" }, { from: "ifetch", to: "ext", label: "HTTPS, static IP" }, { from: "ifetch", to: "bq", label: "MERGE dim_ tables", color: "#f9ab00" }, { from: "job", to: "alloy", label: "read metadata, write catalog" }
   ]
 }));
 
@@ -194,7 +198,8 @@ D.push(diagram("04-data-flow", "Data flow: catalog, usage and lineage", 1280, 76
     { id: "ing", label: "Harvest (nightly)", x: 290, y: 60, w: 260, h: 360 },
     { id: "store", label: "Catalog stores", x: 580, y: 60, w: 330, h: 360 },
     { id: "pub", label: "Publish and serve", x: 940, y: 60, w: 320, h: 360 },
-    { id: "use", label: "Usage analytics", x: 20, y: 460, w: 890, h: 260, fill: "#f1f8f4" }
+    { id: "use", label: "Usage analytics", x: 20, y: 460, w: 890, h: 260, fill: "#f1f8f4" },
+    { id: "dim", label: "Dim-table ingestion (every 10 minutes)", x: 940, y: 460, w: 320, h: 260, fill: "#fff8e1", stroke: "#fbbc04" }
   ],
   nodes: [
     { id: "bqs", label: "BigQuery: source datasets", icon: "bq", x: 60, y: 120, in: "src" },
@@ -202,11 +207,15 @@ D.push(diagram("04-data-flow", "Data flow: catalog, usage and lineage", 1280, 76
     { id: "job", label: "Cloud Run job: harvest", icon: "run", x: 330, y: 270, in: "ing" },
     { id: "alloy", label: "AlloyDB: catalog tables", icon: "alloy", x: 620, y: 110, in: "store" },
     { id: "dpx", label: "Dataplex: lineage, quality, glossary", icon: "data", x: 760, y: 110, in: "store" },
-    { id: "vx", label: "Vertex AI: embeddings,\ndraft descriptions", icon: "ai", x: 760, y: 200, in: "store" },
+    { id: "vx", label: "Vertex AI: embeddings,\ndraft descriptions", icon: "ai", x: 760, y: 250, in: "store" },
     { id: "mat", label: "materialize.js: build\nconsumer JSON files", w: 150, x: 620, y: 340, in: "store" },
     { id: "site", label: "Cloud Storage: site bucket\ndata/consumer/*.json", icon: "storage", x: 960, y: 110, in: "pub" },
     { id: "cdn", label: "Cloud CDN\nHTTPS to users", icon: "net", x: 1100, y: 110, in: "pub" },
     { id: "api", label: "Cloud Run API\nwrites + admin actions", icon: "run", x: 1030, y: 340, in: "pub" },
+    { id: "dsch", label: "Cloud Scheduler\nevery 10 min", icon: "mgmt", x: 960, y: 500, in: "dim" },
+    { id: "dfetch", label: "Cloud Run job: API fetcher", icon: "run", x: 1090, y: 500, in: "dim" },
+    { id: "dext", label: "External REST APIs", w: 90, h: 50, x: 1170, y: 510, in: "dim", fill: "#fce8e6", stroke: "#ea4335" },
+    { id: "dbq", label: "BigQuery: dim_ tables\n(source dataset)", icon: "bq", x: 1090, y: 620, in: "dim" },
     { id: "evt", label: "Browser events\n/api/events", w: 130, x: 50, y: 520, in: "use" },
     { id: "ps", label: "Pub/Sub topic\n+ dead-letter topic", icon: "integ", x: 230, y: 510, in: "use" },
     { id: "usage", label: "BigQuery: usage dataset\n(BQ subscription)", icon: "bq", x: 400, y: 510, in: "use" },
@@ -216,7 +225,7 @@ D.push(diagram("04-data-flow", "Data flow: catalog, usage and lineage", 1280, 76
   edges: [
     { from: "sch", to: "job" }, { from: "job", to: "bqs", label: "read" }, { from: "job", to: "alloy", label: "upsert" },
     { from: "job", to: "dpx", dashed: true, label: "lineage" }, { from: "job", to: "vx", dashed: true, label: "descriptions" }, { from: "alloy", to: "vx", dashed: true, label: "vector search" }, { from: "alloy", to: "mat" }, { from: "mat", to: "site", label: "sync" },
-    { from: "site", to: "cdn" }, { from: "api", to: "alloy" }, { from: "evt", to: "ps" }, { from: "ps", to: "usage" },
+    { from: "site", to: "cdn" }, { from: "api", to: "alloy" }, { from: "evt", to: "ps" }, { from: "dsch", to: "dfetch" }, { from: "dfetch", to: "dext", label: "HTTPS" }, { from: "dfetch", to: "dbq", label: "MERGE" }, { from: "ps", to: "usage" },
     { from: "log", to: "usage", dashed: true }, { from: "usage", to: "dash" }
   ]
 }));
