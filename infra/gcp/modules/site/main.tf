@@ -41,6 +41,13 @@ resource "google_storage_bucket_iam_member" "deployer_write" {
   member = "serviceAccount:${var.deployer_service_account}"
 }
 
+# rsync also needs to read bucket metadata (storage.buckets.get); objectAdmin does not include it.
+resource "google_storage_bucket_iam_member" "deployer_bucket_read" {
+  bucket = google_storage_bucket.site.name
+  role   = "roles/storage.legacyBucketReader"
+  member = "serviceAccount:${var.deployer_service_account}"
+}
+
 # The deployer may only invalidate the CDN cache, nothing else on the load balancer.
 resource "google_project_iam_custom_role" "cdn_invalidate" {
   project     = var.project_id
