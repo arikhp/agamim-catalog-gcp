@@ -7,7 +7,7 @@
  */
 (function () {
   "use strict";
-  var SESSION = JSON.stringify({ signedIn: true, role: "user" });
+  var SESSION = JSON.stringify({ signedIn: true, role: "consumer" });
 
   function ensureSession() {
     try { if (!sessionStorage.getItem("auth")) sessionStorage.setItem("auth", SESSION); } catch (e) { /* storage blocked */ }

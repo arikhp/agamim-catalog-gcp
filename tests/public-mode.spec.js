@@ -36,4 +36,21 @@ test.describe("public consumer mode", () => {
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
     await expect(page.getByText("כל המאגרים")).toBeVisible();
   });
+
+  test("read-only: no access toggles on the list and no block button on a dataset page", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText("כל המאגרים")).toBeVisible();
+    // The open/blocked pills are status labels, not controls.
+    await expect(page.locator('[role="switch"]')).toHaveCount(0);
+    const pills = page.locator(".agm-status");
+    await expect(pills).not.toHaveCount(0);
+    const enabled = await pills.evaluateAll((els) => els.filter((e) => !e.disabled).length);
+    expect(enabled).toBe(0);
+
+    await page.getByText("נפות פיקוד העורף").first().click();
+    await expect(page.getByText("מה זה?")).toBeVisible();
+    await expect(page.getByText("חסימת המאגר")).toHaveCount(0);
+    await expect(page.getByText("פתיחת המאגר לגישה")).toHaveCount(0);
+    await expect(page.locator(".agm-admin-switch")).toHaveCount(0);
+  });
 });
