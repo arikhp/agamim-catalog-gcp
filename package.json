@@ -9,7 +9,10 @@
     "test:headed": "playwright test --headed",
     "test:report": "playwright show-report",
     "server": "node --no-warnings server/index.js",
-    "test:server": "node --no-warnings --test \"server/test/*.test.js\""
+    "test:server": "node --no-warnings --test \"server/test/*.test.js\"",
+    "build:consumer": "node tools/build-consumer.mjs",
+    "serve:dist": "http-server dist -p 4180 -a 127.0.0.1 -c-1",
+    "test:consumer": "playwright test \"^.*/tests/(home|data|a11y|sort|search-suggest|no-version|qa)\\\\.spec\\\\.js$\" --grep-invert 'add-dataset|add dataset|add-dataset form|registered dataset|alert is above the bar'"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
