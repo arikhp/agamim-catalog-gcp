@@ -1,0 +1,10 @@
+{
+  "name": "agamim-catalog-server",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Back end for the catalog site. Only the Azure SQL driver is a dependency; local runs and tests use node:sqlite.",
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "mssql": "11.0.1"
+  }
+}

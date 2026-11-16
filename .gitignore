@@ -1,0 +1,28 @@
+node_modules/
+test-results/
+playwright-report/
+_site/
+
+# Mixpanel mock-data tooling: credentials and generated output stay local
+.mixpanel-import.env
+mock-mixpanel-events.ndjson
+mock-amplitude-events.ndjson
+
+# Terraform: state and local variables stay local
+infra/.terraform/
+infra/*.tfstate*
+infra/terraform.tfvars
+infra/*.tfplan
+
+# GCP / Terraform
+.terraform/
+*.tfstate*
+*.tfvars
+*.tfplan
+dist/
+.env
+.env.*
+*.sqlite
+.DS_Store
+.claude/
+.playwright-mcp/

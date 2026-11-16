@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Catalog Analytics Guide</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #14181f; --muted: #5b6573; --line: #e2e6ec;
+    --accent: #1f5fd1; --good: #1a8a5a; --warn: #c2700a; --bad: #c0392b;
+    --c1: #1f5fd1; --c2: #e08a1e; --c3: #1a8a5a; --c4: #8a5bd6; --c5: #7a8696;
+    --note: #eef3fc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1218; --card: #181d26; --ink: #e8ecf2; --muted: #9aa5b5; --line: #2a3140;
+      --accent: #6ea0ff; --good: #4cc790; --warn: #f0b05a; --bad: #ef7d70;
+      --c1: #6ea0ff; --c2: #f0a53c; --c3: #4cc790; --c4: #b08af0; --c5: #8b97a8;
+      --note: #1b2433;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1218; --card: #181d26; --ink: #e8ecf2; --muted: #9aa5b5; --line: #2a3140;
+    --accent: #6ea0ff; --good: #4cc790; --warn: #f0b05a; --bad: #ef7d70;
+    --c1: #6ea0ff; --c2: #f0a53c; --c3: #4cc790; --c4: #b08af0; --c5: #8b97a8;
+    --note: #1b2433;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px 64px; }
+  header { padding: 40px 0 20px; }
+  h1 { font-size: 2rem; margin: 0 0 8px; letter-spacing: -0.02em; }
+  h2 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h3 { font-size: 1.05rem; margin: 20px 0 6px; }
+  p { margin: 0 0 12px; }
+  .lede { color: var(--muted); max-width: 70ch; }
+  .tag { display: inline-block; font-size: .75rem; padding: 2px 8px; border-radius: 99px; background: var(--note); color: var(--accent); font-weight: 600; margin-right: 6px; }
+  .links a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .links a:hover { text-decoration: underline; }
+  nav { position: sticky; top: 0; background: var(--bg); border-bottom: 1px solid var(--line); z-index: 5; margin: 0 -16px; padding: 10px 16px; display: flex; gap: 16px; flex-wrap: wrap; font-size: .9rem; }
+  nav a { color: var(--muted); text-decoration: none; }
+  nav a:hover { color: var(--accent); }
+  section { margin-top: 48px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 16px 0; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .kpi .v { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+  .kpi .l { font-weight: 600; margin-top: 4px; }
+  .kpi .d { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 16px 0; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } }
+  .chartbox { position: relative; height: 300px; }
+  .chartbox.tall { height: 340px; }
+  .cap { color: var(--muted); font-size: .85rem; margin-top: 8px; }
+  .story { border-left: 4px solid var(--accent); background: var(--note); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .action { border-left: 4px solid var(--good); background: var(--note); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .caveat { border-left: 4px solid var(--warn); background: var(--note); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .heat td.cell { text-align: center; font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; }
+  code { background: var(--note); padding: 1px 6px; border-radius: 4px; font-size: .88em; }
+  ul { margin: 0 0 12px; padding-left: 20px; }
+  li { margin: 4px 0; }
+  footer { margin-top: 56px; color: var(--muted); font-size: .85rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <span class="tag">Mock data</span><span class="tag">Amplitude</span><span class="tag">Last 30 days to 12 Nov 2026</span>
+  <h1>Catalog Analytics Guide</h1>
+  <p class="lede">A product manager's walkthrough of the data catalog dashboard: what each chart shows, which KPI it feeds, what the numbers mean, and what to do about them. All numbers come from 178 synthetic users, tagged <code>is_mock = true</code>, so no real person is in this data.</p>
+  <p class="links"><a href="https://app.amplitude.com/analytics/muddy-lake-872594/dashboard/mfziroqp" target="_blank" rel="noopener">Open the live dashboard in Amplitude</a> (needs your Amplitude login)</p>
+</header>
+
+<nav>
+  <a href="#summary">Summary</a>
+  <a href="#login">1. Login and MFA</a>
+  <a href="#discovery">2. Search and discovery</a>
+  <a href="#registration">3. Add dataset</a>
+  <a href="#retention">4. Retention and roles</a>
+  <a href="#glossary">Glossary</a>
+  <a href="#caveats">Caveats</a>
+</nav>
+
+<section id="summary">
+  <h2>The product in one paragraph</h2>
+  <p>The catalog lets people in the organisation find datasets and understand them (contract, lineage, quality, consumers, access). Most people are consumers who search and read. Admins also register new datasets. The product is healthy when people get in without friction, find a dataset quickly, come back, and when admins can keep the catalog full.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">179</div><div class="l">Users who signed in</div><div class="d">152 users + 27 admins, 30 days</div></div>
+    <div class="kpi"><div class="v">1,056</div><div class="l">Dataset views</div><div class="d">The value event: someone opened a dataset page</div></div>
+    <div class="kpi"><div class="v">98%</div><div class="l">Search to open</div><div class="d">123 searched, 121 opened a dataset within 30 minutes</div></div>
+    <div class="kpi"><div class="v">60%</div><div class="l">Registration completion</div><div class="d">9 of 15 admins who started finished</div></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">North Star metric</h3>
+    <p><strong>Weekly users who view at least one dataset.</strong> It counts people who got what the product exists to give them. Login success and search are inputs to it. Registration feeds it from the supply side, because a catalog with few datasets has little to view.</p>
+    <p class="cap">In Amplitude: Event Segmentation, event <code>Dataset Viewed</code>, measured as unique users, weekly.</p>
+  </div>
+
+  <h3>How the four use cases connect</h3>
+  <table>
+    <tr><th>Use case</th><th>PM question</th><th>Lead KPI</th><th>Charts</th></tr>
+    <tr><td><a href="#login">1. Login and MFA</a></td><td>Can people get in?</td><td>Sign-in completion, failed attempts</td><td>Funnel, failures by reason</td></tr>
+    <tr><td><a href="#discovery">2. Search and discovery</a></td><td>Do they find what they need?</td><td>Dataset views, search to open, suggestion share</td><td>Views by source, search funnel</td></tr>
+    <tr><td><a href="#registration">3. Add dataset</a></td><td>Can admins keep the catalog full?</td><td>Registration completion</td><td>Registration funnel</td></tr>
+    <tr><td><a href="#retention">4. Retention and roles</a></td><td>Do they come back, and who are they?</td><td>Weekly retention, admin share</td><td>Retention table, sign-ins by role</td></tr>
+  </table>
+</section>
+
+<!-- ============ 1 LOGIN ============ -->
+<section id="login">
+  <span class="tag">Use case 1</span>
+  <h2>Login and MFA</h2>
+  <p class="lede">Every other metric depends on people getting in. Login in this product has two steps: credentials, then a one-time code.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">99.4%</div><div class="l">Sign-in completion</div><div class="d">179 of 180 users who viewed login signed in</div></div>
+    <div class="kpi"><div class="v">~40 s</div><div class="l">Median time to sign in</div><div class="d">16 + 3 + 19 + 2 seconds across the four steps</div></div>
+    <div class="kpi"><div class="v">96</div><div class="l">Failed attempts</div><div class="d">93 wrong credentials, 3 account lockouts</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">Chart: Login and MFA funnel</h3>
+      <div class="chartbox"><canvas id="cLoginFunnel"></canvas></div>
+      <p class="cap">Funnel, unique users, 1-day conversion window. Events: Login Viewed, Login Submitted, MFA Viewed, MFA Code Submitted, Sign In Completed.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Chart: Login failures by reason</h3>
+      <div class="chartbox"><canvas id="cFailures"></canvas></div>
+      <p class="cap">Event Segmentation, event totals per day, grouped by the <code>reason</code> property.</p>
+    </div>
+  </div>
+
+  <h3>How to read it</h3>
+  <ul>
+    <li><strong>The funnel</strong> shows where people drop out between seeing the login screen and being signed in. Each bar is the number of distinct users who reached that step. The time on each step is in the Amplitude chart's tooltip.</li>
+    <li><strong>The failures chart</strong> separates <code>invalid_credentials</code> (a typo or a forgotten password) from <code>account_locked</code> (three failures in a row). Locks are the expensive ones: they end in a support ticket.</li>
+  </ul>
+
+  <div class="story"><strong>What the data says.</strong> Almost everyone gets in, and gets in fast. Failures rise with traffic, so read them as a rate, not a count. 22 October stands out: 6 failed attempts (5 wrong credentials, 1 lockout) against only 9 users signing in that day. That is the pattern of a flaky login window or a bad rollout, not ordinary typos.</div>
+
+  <div class="action"><strong>What I would do.</strong> Add an alert on failure rate per day, not on count. Ask why a lockout happens after only three tries, and check whether a "forgot password" link is visible on the failed-login screen. Track lockouts as a support-cost KPI.</div>
+
+  <div class="caveat"><strong>Limit of this chart.</strong> The funnel counts a user once, even if they had several login sessions in the window. A user who gave up in one session and succeeded in another counts as converted, so 99.4% hides session-level abandonment. For per-session health, use a session-based funnel in the Amplitude UI.</div>
+</section>
+
+<!-- ============ 2 DISCOVERY ============ -->
+<section id="discovery">
+  <span class="tag">Use case 2</span>
+  <h2>Search and discovery</h2>
+  <p class="lede">This is where the value is created. A signed-in user who cannot find a dataset has not been helped, however smooth the login was.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">1,056</div><div class="l">Dataset views</div><div class="d">Total <code>Dataset Viewed</code> events, 30 days</div></div>
+    <div class="kpi"><div class="v">13% → 34%</div><div class="l">Suggestion share of views</div><div class="d">Before vs after search suggestions launched (about 28 Oct)</div></div>
+    <div class="kpi"><div class="v">98.4%</div><div class="l">Search to open</div><div class="d">121 of 123 searchers opened a dataset within 30 minutes</div></div>
+    <div class="kpi"><div class="v">7 s</div><div class="l">Median time to open</div><div class="d">From search to the dataset page</div></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Chart: Dataset views by source</h3>
+    <div class="chartbox tall"><canvas id="cViews"></canvas></div>
+    <p class="cap">Event Segmentation, event totals per day, grouped by <code>source</code>: how the user reached the dataset page. Catalog 386, suggestion 327, search 219, home 124.</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Chart: Search to dataset opened</h3>
+    <div class="chartbox" style="height:170px"><canvas id="cSearchFunnel"></canvas></div>
+    <p class="cap">Funnel, unique users, 30-minute window: Search Performed then Dataset Viewed.</p>
+  </div>
+
+  <h3>How to read it</h3>
+  <ul>
+    <li><strong>Source mix</strong> tells you which doors people use. <em>Catalog</em> is browsing, <em>search</em> is typing a query, <em>suggestion</em> is clicking a suggested dataset, <em>home</em> is a shortcut from the start page. A healthy product moves people from slow doors (browsing) to fast ones (search, suggestions).</li>
+    <li><strong>Search to open</strong> measures whether a search leads anywhere. A drop means results are poor, not that people stopped searching.</li>
+  </ul>
+
+  <div class="story"><strong>What the data says.</strong> Suggestions were almost unused before late October: 21 of 164 views, or 13%. After they launched they carry 306 of 892 views, or 34%, and they overtake typed search. The launch worked as a feature: people prefer to click a suggestion than to type. Search is efficient too: 98% of searchers open a dataset, and they do so in seven seconds at the median.</div>
+
+  <div class="action"><strong>What I would do.</strong> Treat the suggestion share as the success metric for the search project and set a target (for example 40%). Look at which dataset ids dominate suggestion clicks, to see whether the list is too narrow. Next chart to build: <code>Dataset Tab Viewed</code> by <code>tab</code>, to see which parts of a dataset page (contract, lineage, quality) people actually read.</div>
+
+  <div class="caveat"><strong>Gap in the tracking plan.</strong> The 98% only counts people who opened something. A search that returns nothing and is abandoned is not captured as such, because <code>Search Performed</code> carries only <code>query_length</code> and <code>query_words</code>. Add a <code>results_count</code> property to measure zero-result searches, usually the best signal of what is missing from a catalog.</div>
+</section>
+
+<!-- ============ 3 REGISTRATION ============ -->
+<section id="registration">
+  <span class="tag">Use case 3</span>
+  <h2>Add dataset (admins)</h2>
+  <p class="lede">The supply side. Consumers can only find what admins have registered. Registration is a two-step form: a table step, then a longer details step.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">15</div><div class="l">Registrations started</div><div class="d">Admins who opened the form</div></div>
+    <div class="kpi"><div class="v">60%</div><div class="l">Completion rate</div><div class="d">9 of 15 reached Dataset Registered</div></div>
+    <div class="kpi"><div class="v">~7 min</div><div class="l">Step 1 to step 2</div><div class="d">Median 431 s: the long form</div></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">Chart: Registration funnel</h3>
+    <div class="chartbox"><canvas id="cReg"></canvas></div>
+    <p class="cap">Funnel, unique users, 1-hour window: Dataset Registration Started, Step Completed (step 1), Step Completed (step 2), Dataset Registered. Steps 1 and 2 are the same event separated by the <code>step</code> property.</p>
+  </div>
+
+  <table>
+    <tr><th>Step</th><th class="num">Users</th><th class="num">Of previous step</th><th class="num">Of started</th></tr>
+    <tr><td>Started</td><td class="num">15</td><td class="num">-</td><td class="num">100%</td></tr>
+    <tr><td>Step 1: table</td><td class="num">13</td><td class="num">87%</td><td class="num">87%</td></tr>
+    <tr><td>Step 2: details</td><td class="num">10</td><td class="num">77%</td><td class="num">67%</td></tr>
+    <tr><td>Registered</td><td class="num">9</td><td class="num">90%</td><td class="num">60%</td></tr>
+  </table>
+
+  <div class="story"><strong>What the data says.</strong> The largest relative loss is between step 1 and step 2 (3 of 13 admins), and that is also the slowest step: a median of seven minutes. Once admins finish step 2, nine in ten complete. So the problem is the long details form, not the final submit.</div>
+
+  <div class="action"><strong>What I would do.</strong> Split step 2 or make some fields optional; pre-fill columns from the table in step 1; keep the draft (there is already a <code>resumed_draft</code> property, so measure how many come back). Watch <code>Dataset Registration Abandoned</code> by <code>last_step</code> to confirm where people leave.</div>
+
+  <div class="caveat"><strong>Sample size.</strong> Fifteen admins is too few for a firm conclusion: one admin is 7 percentage points. Use it to decide where to look, not to set a target.</div>
+</section>
+
+<!-- ============ 4 RETENTION ============ -->
+<section id="retention">
+  <span class="tag">Use case 4</span>
+  <h2>Retention and roles</h2>
+  <p class="lede">Do people come back, and are the right people using the product? A catalog that is used once is a launch, not a habit.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">93% → 43%</div><div class="l">Week-1 retention by cohort</div><div class="d">Oct 12 cohort to Nov 2 cohort (Nov 2 is still in progress)</div></div>
+    <div class="kpi"><div class="v">15%</div><div class="l">Admin share</div><div class="d">27 admins out of 179 signed-in users</div></div>
+    <div class="kpi"><div class="v">~5 → ~57</div><div class="l">Daily sign-ins</div><div class="d">Mid-October vs 12 November, after the rollout</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">Chart: Daily sign-ins by role</h3>
+      <div class="chartbox tall"><canvas id="cRoles"></canvas></div>
+      <p class="cap">Event Segmentation, unique users per day, event <code>Sign In Completed</code>, grouped by the user property <code>role</code>.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Chart: Weekly retention on Dataset Viewed</h3>
+      <div class="scroll">
+      <table class="heat" id="ret">
+        <thead><tr><th>Cohort (week of)</th><th class="num">Users</th><th>Wk 0</th><th>Wk 1</th><th>Wk 2</th><th>Wk 3</th><th>Wk 4</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      </div>
+      <p class="cap">Retention, start and return event both <code>Dataset Viewed</code>. Each cell is the share of that cohort who viewed a dataset again that week. Overall retained: week 1 is 72 of 175 users.</p>
+    </div>
+  </div>
+
+  <h3>How to read it</h3>
+  <ul>
+    <li><strong>The sign-ins chart</strong> shows growth and who it comes from. The jump in the third week of the window is the rollout, when new teams were onboarded: daily sign-ins rise from single digits to around 50 to 60.</li>
+    <li><strong>The retention table</strong> groups people by the week they first viewed a dataset and follows them. Read each row left to right, and compare rows top to bottom to see whether newer cohorts retain better or worse.</li>
+  </ul>
+
+  <div class="story"><strong>What the data says.</strong> Older cohorts are sticky: the first cohort returned at 93% in week 1. The cohort sizes explain the fall-off in newer rows: the rollout brought 115 people in each of the last two weeks, and a rollout cohort behaves differently from early adopters, who chose the tool. The 43% for the 2 November cohort is also incomplete, because its week 1 is the week still in progress.</div>
+
+  <div class="action"><strong>What I would do.</strong> Wait for the 2 November cohort to finish before judging it. Then compare early adopters against rollout users: if rollout retention settles well below, build onboarding for people who did not choose the tool (a first-dataset tour, saved searches, team-level starter lists). Keep admins as a separate segment: they are 15% of users but all of the supply.</div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section id="glossary">
+  <h2>Glossary</h2>
+  <div class="card">
+    <table>
+      <tr><th>Term</th><th>Meaning in these charts</th></tr>
+      <tr><td>Unique users</td><td>Each person counted once in the period, however many times they did the event.</td></tr>
+      <tr><td>Event totals</td><td>Every occurrence counted. One person opening three datasets is three.</td></tr>
+      <tr><td>Conversion window</td><td>How long a user has to complete the whole funnel after the first step.</td></tr>
+      <tr><td>Value event</td><td>The event that means the user got what the product is for. Here: <code>Dataset Viewed</code>.</td></tr>
+      <tr><td>Cohort</td><td>Users grouped by when they first did something, here the week of their first dataset view.</td></tr>
+      <tr><td>Segment <code>is_mock</code></td><td>A filter on every chart so the synthetic data can be separated from real traffic in the same project.</td></tr>
+    </table>
+  </div>
+
+  <h3>The events behind the charts</h3>
+  <div class="card scroll">
+    <table>
+      <tr><th>Area</th><th>Events</th><th>Properties</th></tr>
+      <tr><td>Login</td><td>Login Viewed, Login Submitted, Login Failed, MFA Viewed, MFA Code Submitted, MFA Code Resent, Sign In Completed</td><td><code>reason</code>, <code>attempts_left</code>, <code>seconds_to_complete</code></td></tr>
+      <tr><td>Onboarding</td><td>Profile Screen Viewed, Profile Completed</td><td><code>hierarchy</code></td></tr>
+      <tr><td>Discovery</td><td>Search Performed, Search Suggestion Clicked, Catalog Viewed, Dataset Viewed, Dataset Tab Viewed</td><td><code>query_length</code>, <code>query_words</code>, <code>dataset_id</code>, <code>source</code>, <code>tab</code></td></tr>
+      <tr><td>Registration</td><td>Dataset Registration Started, Step Completed, Dataset Registered, Dataset Registration Abandoned</td><td><code>step</code>, <code>step_name</code>, <code>resumed_draft</code>, <code>columns_count</code>, <code>requirements_count</code>, <code>last_step</code></td></tr>
+    </table>
+    <p class="cap">By design, the site never sends names, emails, credentials, one-time codes or typed search text. Search sends only the length and word count.</p>
+  </div>
+</section>
+
+<!-- ============ CAVEATS ============ -->
+<section id="caveats">
+  <h2>Caveats and next steps</h2>
+  <div class="card">
+    <ul>
+      <li><strong>This is synthetic data.</strong> It was generated with built-in stories (a login failure window, a suggestions launch, a drop at registration step 2, a rollout spike) so every chart has something to explain. Patterns here show the dashboard works, not how real users behave.</li>
+      <li><strong>Two analyses are not saved as Amplitude charts</strong> because the starter plan limits saved charts: weekly retention and sign-ins by role. They appear on this page, and as a text block on the dashboard.</li>
+      <li><strong>Funnels count users, not sessions</strong>, so they hide repeated attempts.</li>
+      <li><strong>Mock and real data share a project.</strong> Keep the <code>is_mock</code> filter on every chart, or move the real site to its own project before launch.</li>
+      <li><strong>Next steps:</strong> add <code>results_count</code> to Search Performed; chart tab usage; build cohorts for power users, one-off users and admins; set targets for the four lead KPIs once real data exists.</li>
+    </ul>
+    <p class="cap">Regenerate and re-send the data with <code>node tools/mock-amplitude.mjs --send</code>. Re-running does not create duplicates.</p>
+  </div>
+</section>
+
+<footer>Catalog Analytics Guide. Numbers from Amplitude project "default", read 12 November 2026.</footer>
+</div>
+
+<script>
+(function () {
+  var days = [];
+  var d0 = new Date(Date.UTC(2026, 9, 13));
+  for (var i = 0; i < 31; i++) {
+    var d = new Date(d0.getTime() + i * 86400000);
+    days.push(d.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }));
+  }
+
+  var data = {
+    failInvalid: [0,0,1,0,0,0,1,0,1,5,0,0,3,2,6,2,5,1,0,4,0,11,10,7,1,1,3,8,5,11,5],
+    failLocked:  [0,0,0,0,0,0,0,0,0,1,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    catalog:    [0,3,4,1,1,7,1,0,3,5,1,0,8,14,8,15,14,1,1,19,15,19,34,35,5,6,29,32,32,45,28],
+    suggestion: [0,0,0,0,0,1,2,1,1,0,0,1,2,4,3,6,18,2,0,14,21,23,28,26,7,5,26,31,28,35,42],
+    search:     [0,3,5,2,2,4,2,3,2,3,0,0,8,5,8,3,7,2,1,8,11,12,16,18,2,2,10,20,11,17,32],
+    home:       [0,0,3,0,0,1,0,3,0,2,0,1,2,4,3,3,6,0,1,8,10,6,12,3,3,2,7,10,14,10,10],
+    users:  [0,5,4,2,3,5,4,5,5,9,0,1,9,15,14,18,18,2,3,17,28,28,48,30,6,3,29,39,37,43,48],
+    admins: [0,0,2,0,0,2,1,0,1,0,1,0,2,1,1,1,5,1,0,1,8,9,10,11,3,4,7,8,7,11,9]
+  };
+
+  var cohorts = [
+    ["12 Oct", 14, [14, 13, 13, 10, 6]],
+    ["19 Oct", 23, [23, 21, 18, 7]],
+    ["26 Oct", 47, [47, 35, 19]],
+    ["2 Nov", 115, [115, 50]],
+    ["9 Nov", 115, [115]]
+  ];
+
+  function css(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+  function buildTable() {
+    var body = document.querySelector("#ret tbody");
+    body.innerHTML = "";
+    var acc = css("--c1");
+    cohorts.forEach(function (c) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td>" + c[0] + "</td><td class='num'>" + c[1] + "</td>";
+      for (var w = 0; w < 5; w++) {
+        var td = document.createElement("td");
+        td.className = "cell";
+        if (w < c[2].length) {
+          var p = c[2][w] / c[1];
+          td.textContent = Math.round(p * 100) + "%";
+          td.style.background = "color-mix(in srgb, " + acc + " " + Math.round(p * 70) + "%, transparent)";
+          td.style.color = p > 0.55 ? "#fff" : "inherit";
+        } else {
+          td.textContent = "";
+        }
+        tr.appendChild(td);
+      }
+      body.appendChild(tr);
+    });
+  }
+
+  var charts = [];
+  function make(id, cfg) {
+    var el = document.getElementById(id);
+    var ch = new Chart(el, cfg);
+    charts.push(ch);
+  }
+
+  function render() {
+    charts.forEach(function (c) { c.destroy(); });
+    charts = [];
+    var ink = css("--ink"), muted = css("--muted"), line = css("--line");
+    var c1 = css("--c1"), c2 = css("--c2"), c3 = css("--c3"), c4 = css("--c4"), c5 = css("--c5");
+    Chart.defaults.color = muted;
+    Chart.defaults.borderColor = line;
+    Chart.defaults.font.family = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+
+    var stackedOpts = function () {
+      return {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { color: ink, boxWidth: 12 } } },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { maxTicksLimit: 8, autoSkip: true } },
+          y: { stacked: true, beginAtZero: true, grid: { color: line } }
+        }
+      };
+    };
+
+    var funnelOpts = function (max) {
+      return {
+        indexAxis: "y", responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (c) { return c.parsed.x + " users"; } } }
+        },
+        scales: {
+          x: { beginAtZero: true, max: max, grid: { color: line } },
+          y: { grid: { display: false }, ticks: { color: ink } }
+        }
+      };
+    };
+
+    make("cLoginFunnel", {
+      type: "bar",
+      data: {
+        labels: ["Login Viewed", "Login Submitted", "MFA Viewed", "MFA Code Submitted", "Sign In Completed"],
+        datasets: [{ data: [180, 180, 180, 180, 179], backgroundColor: c1, borderRadius: 4 }]
+      },
+      options: funnelOpts(200)
+    });
+
+    make("cFailures", {
+      type: "bar",
+      data: {
+        labels: days,
+        datasets: [
+          { label: "invalid_credentials", data: data.failInvalid, backgroundColor: c2 },
+          { label: "account_locked", data: data.failLocked, backgroundColor: c5 }
+        ]
+      },
+      options: stackedOpts()
+    });
+
+    make("cViews", {
+      type: "bar",
+      data: {
+        labels: days,
+        datasets: [
+          { label: "catalog", data: data.catalog, backgroundColor: c1 },
+          { label: "suggestion", data: data.suggestion, backgroundColor: c3 },
+          { label: "search", data: data.search, backgroundColor: c2 },
+          { label: "home", data: data.home, backgroundColor: c4 }
+        ]
+      },
+      options: stackedOpts()
+    });
+
+    make("cSearchFunnel", {
+      type: "bar",
+      data: {
+        labels: ["Search Performed", "Dataset Viewed"],
+        datasets: [{ data: [123, 121], backgroundColor: c3, borderRadius: 4 }]
+      },
+      options: funnelOpts(140)
+    });
+
+    make("cReg", {
+      type: "bar",
+      data: {
+        labels: ["Started", "Step 1 completed", "Step 2 completed", "Registered"],
+        datasets: [{ data: [15, 13, 10, 9], backgroundColor: c4, borderRadius: 4 }]
+      },
+      options: funnelOpts(18)
+    });
+
+    make("cRoles", {
+      type: "bar",
+      data: {
+        labels: days,
+        datasets: [
+          { label: "user", data: data.users, backgroundColor: c1 },
+          { label: "admin", data: data.admins, backgroundColor: c2 }
+        ]
+      },
+      options: stackedOpts()
+    });
+
+    buildTable();
+  }
+
+  render();
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", render);
+  }
+})();
+</script>
+</body>
+</html>
