@@ -38,9 +38,11 @@ jobs:
           for i in $(seq 1 20); do curl -sf http://127.0.0.1:4180/ >/dev/null && exit 0; sleep 1; done
           echo 'server did not start'; exit 1
       - name: Test dist/ (consumer specs only)
+        timeout-minutes: 6
         env:
           BASE_URL: http://127.0.0.1:4180
-        run: npm run test:consumer
+          DEBUG: pw:api
+        run: npm run test:consumer -- --reporter=list --workers=2
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
