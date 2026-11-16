@@ -70,31 +70,16 @@ resource "google_compute_managed_ssl_certificate" "site" {
   lifecycle { create_before_destroy = true }
 }
 
-# ---------- Cloud Armor (edge policy: the only kind a backend bucket supports) ----------
-resource "google_compute_security_policy" "edge" {
-  name    = "${var.name}-edge"
-  project = var.project_id
-  type    = "CLOUD_ARMOR_EDGE"
-
-  rule {
-    action      = "allow"
-    priority    = 2147483647
-    description = "Default: allow"
-    match {
-      versioned_expr = "SRC_IPS_V1"
-      config { src_ip_ranges = ["*"] }
-    }
-  }
-}
+# Cloud Armor is not used: a backend bucket only supports an edge policy, and this account's security-policy
+# quota is 0. Revisit when the API sits behind the load balancer (WAF rules apply there).
 
 # ---------- CDN + load balancer ----------
 resource "google_compute_backend_bucket" "site" {
-  name                 = "${var.name}-site"
-  project              = var.project_id
-  bucket_name          = google_storage_bucket.site.name
-  enable_cdn           = true
-  edge_security_policy = google_compute_security_policy.edge.id
-  compression_mode     = "AUTOMATIC"
+  name             = "${var.name}-site"
+  project          = var.project_id
+  bucket_name      = google_storage_bucket.site.name
+  enable_cdn       = true
+  compression_mode = "AUTOMATIC"
 
   cdn_policy {
     cache_mode        = "USE_ORIGIN_HEADERS" # the release workflow sets Cache-Control per file type
