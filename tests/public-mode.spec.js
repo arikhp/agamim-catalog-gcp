@@ -9,6 +9,17 @@ test.describe("public consumer mode", () => {
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
     await expect(page.getByText("DEV ONLY")).toHaveCount(0);
     await expect(page.getByText("demo1234")).toHaveCount(0);
+    // No first-visit profile form ("welcome": name, role, rank, ...).
+    await expect(page.getByText("ברוכים הבאים")).toHaveCount(0);
+  });
+
+  test("nothing covers the page: a visitor can open a dataset straight away", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByText("כל המאגרים")).toBeVisible();
+    const before = page.url();
+    // click() fails if an overlay intercepts the pointer, which is how a profile form would show up.
+    await page.getByText("רשויות מקומיות").first().click({ timeout: 5000 });
+    await expect.poll(() => page.url()).not.toBe(before);
   });
 
   test("no account controls: sign out and reset demo are not visible", async ({ page }) => {

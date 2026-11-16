@@ -10,17 +10,17 @@ const DIST = join(ROOT, "dist");
 const ALLOW = [
   "index.html", "404.html",
   "agamim-logo.png", "agamim-emblem.png", "pakar-logo.svg",
-  "hero.css", "onboarding.css", "onboarding.js",
+  "hero.css",
   "theme-oref.css", "theme-oref-2.css", "theme-oref.js",
   "datasets-overlay.js", "search-suggest.js",
   "assets", "data/consumer", "data/meta.json", "data/personas.json",
 ];
 
 // Script tags removed from index.html in the consumer build (admin tooling and login).
-const STRIP_SCRIPTS = ["admin-drawer.js", "admin-actions.js", "login.js", "analytics.js", "analytics-entry.js", "analytics-journey.js"];
+const STRIP_SCRIPTS = ["onboarding.js", "admin-drawer.js", "admin-actions.js", "login.js", "analytics.js", "analytics-entry.js", "analytics-journey.js"];
 
 // Patterns that must never appear in dist/.
-const FORBIDDEN = [/^add-dataset\./, /^admin-/, /^login\./, /^server\//, /^tests?\//, /^tools\//, /^infra\//, /^data\/staging\//,
+const FORBIDDEN = [/^onboarding\./, /^add-dataset\./, /^admin-/, /^login\./, /^server\//, /^tests?\//, /^tools\//, /^infra\//, /^data\/staging\//,
   /\.(env|tfstate|tfvars|ndjson|md|sqlite|db)$/, /(^|\/)\./, /^package(-lock)?\.json$/];
 
 function walk(dir) {
@@ -44,6 +44,12 @@ for (const page of ["index.html", "404.html"]) {
   writeFileSync(file, html);
 }
 
+// The first-visit profile form (onboarding) is not part of the public site. Remove its stylesheet link too.
+for (const page of ["index.html", "404.html"]) {
+  const file = join(DIST, page);
+  writeFileSync(file, readFileSync(file, "utf8").replace(/\s*<link[^>]*href="\.\/onboarding\.css[^"]*"[^>]*>/g, ""));
+}
+
 // Public mode: no sign-in in this phase. Copy the script and load it first, before the app starts.
 cpSync(join(ROOT, "tools/public-mode.js"), join(DIST, "public-mode.js"));
 {
@@ -57,7 +63,7 @@ cpSync(join(ROOT, "tools/public-mode.js"), join(DIST, "public-mode.js"));
 const files = walk(DIST).map((f) => relative(DIST, f));
 const bad = files.filter((f) => FORBIDDEN.some((re) => re.test(f)));
 const leftover = ["index.html", "404.html"].flatMap((p) =>
-  STRIP_SCRIPTS.filter((s) => readFileSync(join(DIST, p), "utf8").includes(s)).map((s) => `${p} still references ${s}`));
+  [...STRIP_SCRIPTS, "onboarding.css"].filter((s) => readFileSync(join(DIST, p), "utf8").includes(s)).map((s) => `${p} still references ${s}`));
 if (!files.includes("index.html")) bad.push("index.html missing");
 if (!readFileSync(join(DIST, "index.html"), "utf8").includes("./public-mode.js")) bad.push("index.html does not load public-mode.js");
 if (bad.length || leftover.length) {
