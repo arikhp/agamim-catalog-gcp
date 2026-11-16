@@ -18,7 +18,7 @@ jobs:
   consumer:
     name: Build and test the consumer site
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,7 +32,14 @@ jobs:
       - name: Build dist/ from the allow-list
         run: npm run build:consumer
       - run: npx playwright install --with-deps chromium
+      - name: Serve dist/
+        run: |
+          npx http-server dist -p 4180 -a 127.0.0.1 -c-1 --silent &
+          for i in $(seq 1 20); do curl -sf http://127.0.0.1:4180/ >/dev/null && exit 0; sleep 1; done
+          echo 'server did not start'; exit 1
       - name: Test dist/ (consumer specs only)
+        env:
+          BASE_URL: http://127.0.0.1:4180
         run: npm run test:consumer
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
