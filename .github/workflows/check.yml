@@ -68,6 +68,22 @@ jobs:
       - run: npx playwright test add-dataset admin-actions
         continue-on-error: true   # advisory until the admin side is cleaned up
 
+  terraform:
+    name: Terraform format and validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.5
+      - run: terraform fmt -check -recursive infra/gcp
+      - name: Validate each environment (no backend, no credentials)
+        run: |
+          for d in infra/gcp/envs/*/; do
+            (cd "$d" && terraform init -backend=false -input=false >/dev/null && terraform validate)
+          done
+
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest
