@@ -50,6 +50,15 @@ for (const page of ["index.html", "404.html"]) {
   writeFileSync(file, readFileSync(file, "utf8").replace(/\s*<link[^>]*href="\.\/onboarding\.css[^"]*"[^>]*>/g, ""));
 }
 
+// No third-party analytics: visitor data must stay in GCP. Remove Amplitude (script + inline init).
+for (const page of ["index.html", "404.html"]) {
+  const file = join(DIST, page);
+  let html = readFileSync(file, "utf8");
+  html = html.replace(/\s*<script[^>]*src="https:\/\/cdn\.amplitude\.com[^"]*"[^>]*><\/script>/g, "");
+  html = html.replace(/\s*<script>(?:(?!<\/script>)[\s\S])*amplitude\.init(?:(?!<\/script>)[\s\S])*<\/script>/g, "");
+  writeFileSync(file, html);
+}
+
 // Public mode: no sign-in in this phase. Copy the script and load it first, before the app starts.
 cpSync(join(ROOT, "tools/public-mode.js"), join(DIST, "public-mode.js"));
 {
@@ -59,7 +68,11 @@ cpSync(join(ROOT, "tools/public-mode.js"), join(DIST, "public-mode.js"));
   writeFileSync(file, html.replace(/<head[^>]*>/i, (m) => `${m}\n    <script src="./public-mode.js"></script>`));
 }
 
-// Verify.
+// Verify. Third-party analytics must not be anywhere in the output.
+for (const f of walk(DIST)) {
+  if (!/\.(html|js|css|json)$/.test(f)) continue;
+  if (/amplitude|mixpanel/i.test(readFileSync(f, "utf8"))) { console.error(`Consumer build FAILED: third-party analytics found in ${relative(DIST, f)}`); process.exit(1); }
+}
 const files = walk(DIST).map((f) => relative(DIST, f));
 const bad = files.filter((f) => FORBIDDEN.some((re) => re.test(f)));
 const leftover = ["index.html", "404.html"].flatMap((p) =>

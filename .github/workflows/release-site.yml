@@ -64,6 +64,7 @@ jobs:
           grep -qi "<html" /tmp/index.html
           # No sign-in in this phase: the page must load the public-mode script that skips the login screen.
           grep -q "public-mode.js" /tmp/index.html || { echo "index.html does not load public-mode.js"; exit 1; }
+          if grep -qiE "amplitude|mixpanel" /tmp/index.html; then echo "third-party analytics is present in index.html"; exit 1; fi
           code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/public-mode.js"); [ "$code" = "200" ] || { echo "public-mode.js missing"; exit 1; }
           code=$(curl -s -o /dev/null -w '%{http_code}' "$SITE_URL/data/consumer/layers.json"); [ "$code" = "200" ]
           for p in add-dataset.html admin-actions.js login.js; do
