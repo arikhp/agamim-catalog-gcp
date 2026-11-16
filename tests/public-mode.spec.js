@@ -53,4 +53,20 @@ test.describe("public consumer mode", () => {
     await expect(page.getByText("פתיחת המאגר לגישה")).toHaveCount(0);
     await expect(page.locator(".agm-admin-switch")).toHaveCount(0);
   });
+
+  test("no third-party requests: visitor data stays with the site and Google Fonts", async ({ page, baseURL }) => {
+    const own = new URL(baseURL).host;
+    const allowed = new Set([own, "fonts.googleapis.com", "fonts.gstatic.com"]);
+    const foreign = new Set();
+    page.on("request", (r) => {
+      const u = new URL(r.url());
+      if (u.protocol.startsWith("http") && !allowed.has(u.host)) foreign.add(u.host);
+    });
+    await page.goto("/");
+    await expect(page.getByText("כל המאגרים")).toBeVisible();
+    await page.getByText("נפות פיקוד העורף").first().click();
+    await expect(page.getByText("מה זה?")).toBeVisible();
+    await page.waitForTimeout(1500);
+    expect([...foreign]).toEqual([]);
+  });
 });
